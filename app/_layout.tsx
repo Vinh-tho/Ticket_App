@@ -8,7 +8,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+// Giữ Splash Screen cho đến khi tài nguyên tải xong
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -18,20 +18,27 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    async function prepare() {
+      try {
+        // Chờ 2 giây trước khi ẩn Splash Screen
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        SplashScreen.hideAsync();
+      }
     }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
+    prepare();
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
+        <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
+        <Stack.Screen name="RegisterScreen" options={{ headerShown: false }} />
+        <Stack.Screen name="ForgotPasswordScreen" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

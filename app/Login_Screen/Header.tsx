@@ -10,9 +10,9 @@ export default function Header() {
     <View style={styles.headerContainer}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          // Icon Close có viền tròn
-          <XCircle size={35} color="white" />{" "}
+        <TouchableOpacity onPress={() => router.replace("/")}>
+          {/* Icon Close có viền tròn */}
+          <XCircle size={35} color="white" />
         </TouchableOpacity>
         <Text style={styles.title}>Đăng nhập</Text>
         <Image

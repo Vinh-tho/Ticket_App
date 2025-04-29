@@ -9,7 +9,7 @@ export default function SettingsCard() {
 
       {/* Mục Ngôn ngữ */}
       <TouchableOpacity style={styles.option}>
-        <IconSymbol name="language" size={20} color="gray" />
+        <IconSymbol name ="language" size={20} color="gray" />
         <Text style={styles.optionText}>Ngôn ngữ</Text>
       </TouchableOpacity>
     </View>

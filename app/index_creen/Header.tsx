@@ -1,27 +1,29 @@
 import {
-    View,
-    ScrollView,
-    Text,
-    Image,
-    StyleSheet,
-    TouchableOpacity,
-    FlatList,
-    Dimensions,
-    StatusBar,
-    Animated,
-  } from "react-native";
-  import { Ionicons } from "@expo/vector-icons";
-  import React, { useRef, useState } from "react";
+  View,
+  ScrollView,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Dimensions,
+  StatusBar,
+  Animated,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useRef, useState } from "react";
+import { useRouter } from "expo-router";
 
 const IMAGES = [
-    { id: "1", src: require("../../assets/images/Header_index/1.png") },
-    { id: "2", src: require("../../assets/images/Header_index/2.png") },
-    { id: "3", src: require("../../assets/images/Header_index/3.png") },
-  ];
+  { id: "1", src: require("../../assets/images/Header_index/1.png") },
+  { id: "2", src: require("../../assets/images/Header_index/2.png") },
+  { id: "3", src: require("../../assets/images/Header_index/3.png") },
+];
 
 const { width, height } = Dimensions.get("window");
 
 export default function Header() {
+  const router = useRouter();
   const scrollX = useRef(new Animated.Value(0)).current;
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -34,19 +36,18 @@ export default function Header() {
     if (viewableItems.length > 0) {
       setCurrentIndex(viewableItems[0].index);
     }
-    };
-    
+  };
 
   return (
     <View>
-      <StatusBar barStyle="dark-content" backgroundColor="#21C064" />
+      <StatusBar barStyle="dark-content"/>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>
           Ticket<Text style={styles.boldText}>box</Text>
         </Text>
-        <TouchableOpacity>
-          <Ionicons name="search" size={24} color="white" />
+        <TouchableOpacity onPress={() => router.push("/SearchScreen")}>
+          <Ionicons name="search" size={28} color="white" />
         </TouchableOpacity>
       </View>
 

@@ -35,7 +35,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="MyTicket"
+        name="Ticket"
         options={{
           title: "Vé của tôi",
           tabBarIcon: ({ color }) => (
@@ -44,7 +44,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="AccountScreen"
+        name="Account"
         options={{
           title: "Tài khoản",
           tabBarIcon: ({ color }) => (

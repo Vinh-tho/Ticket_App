@@ -3,25 +3,53 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { FontAwesome } from "@expo/vector-icons"; // Biểu tượng Google, Apple
-import Header from "@/components/LoginScreen/Header";
+import { FontAwesome } from "@expo/vector-icons";
+import Header from "@/app/Login_Screen/Header";
+import React, { useState } from "react";
+import axios from "axios";
+import * as SecureStore from "expo-secure-store";
+import { BASE_URL } from "@/constants/config";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(`${BASE_URL}/auth/login`, {
+        email,
+        password,
+      });      
+
+      const token = response.data.access_token;
+      console.log("Token nhận được:", token);
+      await SecureStore.setItemAsync("access_token", token); // <-- dòng này rất quan trọng
+      router.push("/(tabs)"); // quay về màn hình chính
+
+    } catch (error: any) {
+      Alert.alert(
+        "Đăng nhập không thành công",
+        "Email hoặc mật khẩu không chính xác!"
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <Header></Header>
+      <Header />
 
       {/* Input Email */}
       <TextInput
         style={styles.input}
-        placeholder="Nhập email hoặc số điện thoại"
+        placeholder="Nhập email hoặc tên đăng nhập"
         placeholderTextColor="#BDBDBD"
+        value={email}
+        onChangeText={setEmail}
       />
 
       {/* Input Password */}
@@ -30,25 +58,32 @@ export default function LoginScreen() {
         placeholder="Nhập mật khẩu"
         placeholderTextColor="#BDBDBD"
         secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
 
       {/* Nút đăng nhập */}
-      <TouchableOpacity style={styles.loginButton} onPress={() => router.push("/(tabs)")} >
-        <Text style={styles.loginText}>Đăng nhập</Text>
-      </TouchableOpacity>
+      <View>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+          <Text style={styles.loginText}>Đăng nhập</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Quên mật khẩu */}
-      <TouchableOpacity onPress={() => router.push("/ForgotPasswordScreen")}>
-      <Text style={styles.forgotText}>Quên mật khẩu?</Text>
-      </TouchableOpacity>
-      
+      <View>
+        <TouchableOpacity onPress={() => router.push("/ForgotPasswordScreen")}>
+          <Text style={styles.forgotText}>Quên mật khẩu?</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Đăng ký tài khoản */}
       <View>
-      <Text style={styles.registerText}>Chưa có tài khoản?</Text>
-      <TouchableOpacity onPress={() => router.push("/RegisterScreen")}>
-        <Text style={styles.registerLink}>Tạo tài khoản ngay</Text>
-      </TouchableOpacity>
+        <Text style={styles.registerText}>Chưa có tài khoản?</Text>
+        <TouchableOpacity onPress={() => router.push("/RegisterScreen")}>
+          <Text style={styles.registerLink}>Tạo tài khoản ngay</Text>
+        </TouchableOpacity>
       </View>
+
       {/* Hoặc */}
       <View style={styles.orContainer}>
         <View style={styles.line} />
@@ -67,14 +102,16 @@ export default function LoginScreen() {
       </View>
 
       {/* Điều khoản */}
-      <Text style={styles.termsText}>
-        Bằng việc tiếp tục, bạn đã đọc và đồng ý với{" "}
-        <Text style={styles.termsLink}>Điều khoản sử dụng</Text> và{" "}
-        <Text style={styles.termsLink}>
-          Chính sách bảo mật thông tin cá nhân
-        </Text>{" "}
-        của Ticketbox.
-      </Text>
+      <View>
+        <Text style={styles.termsText}>
+          Bằng việc tiếp tục, bạn đã đọc và đồng ý với{" "}
+          <Text style={styles.termsLink}>Điều khoản sử dụng</Text> và{" "}
+          <Text style={styles.termsLink}>
+            Chính sách bảo mật thông tin cá nhân
+          </Text>{" "}
+          của Ticketbox.
+        </Text>
+      </View>
     </View>
   );
 }
@@ -82,7 +119,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#00",
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
     paddingTop: 170,
   },

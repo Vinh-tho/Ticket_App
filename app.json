@@ -11,7 +11,6 @@
     "ios": {
       "supportsTablet": true
     },
-    
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -33,7 +32,8 @@
           "resizeMode": "cover",
           "backgroundColor": "#000000"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

@@ -1,6 +1,6 @@
 // This file is a fallback for using MaterialIcons on Android and web.
 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { SymbolWeight } from 'expo-symbols';
 import React from 'react';
 import { OpaqueColorValue, StyleProp, ViewStyle } from 'react-native';
@@ -26,7 +26,9 @@ const MAPPING = {
   "people": "people", // 👥 Điều khoản sử dụng cho khách hàng
   "business": "business", // 🏢 Điều khoản sử dụng cho ban tổ chức
   "credit-card": "credit-card", // 💳 Phương thức thanh toán
-  "close": "close"
+  "close": "close",
+  "logout": "logout",
+  "arrow-back": "arrow-back"
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],

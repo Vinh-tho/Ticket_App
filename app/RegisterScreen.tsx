@@ -7,17 +7,22 @@ import {
   StyleSheet,
   StatusBar,
   SafeAreaView,
-  Platform,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, CaretLeft } from "phosphor-react-native";
-import { CheckCircle, XCircle } from "phosphor-react-native";
+import { CaretLeft, CheckCircle, XCircle } from "phosphor-react-native";
+import axios from "axios";
+import { BASE_URL } from "@/constants/config";
 
 export default function RegisterScreen() {
   const router = useRouter();
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [nameError, setNameError] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [confirmPasswordError, setConfirmPasswordError] = useState(false);
@@ -30,8 +35,14 @@ export default function RegisterScreen() {
       hasUpperCase: /[A-Z]/.test(password),
     };
   };
+
   const validateEmail = (email: string) => {
     return email.endsWith("@gmail.com");
+  };
+
+  const handleNameChange = (text: string) => {
+    setName(text);
+    setNameError(!text.trim());
   };
 
   const handleEmailChange = (text: string) => {
@@ -64,36 +75,74 @@ export default function RegisterScreen() {
     passwordValidation.hasSpecialChar &&
     passwordValidation.hasUpperCase;
 
+  const handleRegister = async () => {
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !confirmPassword ||
+      nameError ||
+      emailError ||
+      passwordError ||
+      confirmPasswordError
+    ) {
+      Alert.alert("Lỗi", "Vui lòng điền đầy đủ và chính xác thông tin!");
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${BASE_URL}/auth/login`, {
+        name,
+        email,
+        password,
+      });      
+
+      Alert.alert("Thành công", "Đăng ký thành công, hãy đăng nhập!");
+      router.push("/LoginScreen");
+    }
+    
+    catch (error: any) {
+      if (axios.isAxiosError(error)) {
+      Alert.alert("Đăng ký thất bại", "Tên đăng nhập hoặc email đã được sử dụng ");
+      }   
+    }    
+  };
+  
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <View style={styles.iconCircle}>
             <CaretLeft size={24} color="black" />
           </View>
         </TouchableOpacity>
-
         <Text style={styles.title}>Đăng ký tài khoản</Text>
       </View>
 
       <View style={styles.container}>
-        {/* Input fields */}
+        {/* Nhập tên */}
+        <TextInput
+          placeholder="Nhập tên của bạn"
+          style={[styles.input, nameError && styles.inputError]}
+          value={name}
+          onChangeText={handleNameChange}
+        />
+        {nameError && <Text style={styles.errorEmail}>Tên không được để trống</Text>}
+
+        {/* Nhập email */}
         <TextInput
           placeholder="Nhập email của bạn"
           style={[styles.input, emailError && styles.inputError]}
           value={email}
           onChangeText={handleEmailChange}
         />
-        {emailError && (
-          <Text style={styles.errorEmail}>Sai định dạng email</Text>
-        )}
+        {emailError && <Text style={styles.errorEmail}>Sai định dạng email</Text>}
 
+        {/* Nhập mật khẩu */}
         <TextInput
           placeholder="Nhập mật khẩu"
           style={[styles.input, passwordError && styles.inputError]}
@@ -101,6 +150,8 @@ export default function RegisterScreen() {
           value={password}
           onChangeText={handlePasswordChange}
         />
+
+        {/* Nhập lại mật khẩu */}
         <TextInput
           placeholder="Nhập lại mật khẩu"
           style={[styles.input, confirmPasswordError && styles.inputError]}
@@ -112,7 +163,7 @@ export default function RegisterScreen() {
           <Text style={styles.errorPassword}>Mật khẩu nhập lại không khớp</Text>
         )}
 
-        {/* Password validation */}
+        {/* Kiểm tra mật khẩu */}
         {!isPasswordValid && (
           <View style={styles.errorBox}>
             <Text style={styles.errorTitle}>Mật khẩu chưa hợp lệ</Text>
@@ -126,8 +177,7 @@ export default function RegisterScreen() {
                 <Text style={styles.errorText}>
                   {key === "length" && "Từ 8 - 32 ký tự"}
                   {key === "hasNumber" && "Bao gồm chữ thường và số"}
-                  {key === "hasSpecialChar" &&
-                    "Bao gồm ký tự đặc biệt (!,$,@,%)"}
+                  {key === "hasSpecialChar" && "Bao gồm ký tự đặc biệt (!,$,@,%)"}
                   {key === "hasUpperCase" && "Có ít nhất 1 ký tự in hoa"}
                 </Text>
               </View>
@@ -135,18 +185,16 @@ export default function RegisterScreen() {
           </View>
         )}
 
-        {/* Submit button */}
+        {/* Nút đăng ký */}
         <TouchableOpacity
-          style={[
-            styles.submitButton,
-            !isPasswordValid && styles.disabledButton,
-          ]}
-          disabled={!isPasswordValid}
+          style={[styles.submitButton, (!isPasswordValid || nameError) && styles.disabledButton]}
+          onPress={handleRegister}
+          disabled={!isPasswordValid || nameError}
         >
           <Text style={styles.submitText}>Tiếp tục</Text>
         </TouchableOpacity>
 
-        {/* Link to Login */}
+        {/* Đã có tài khoản */}
         <Text style={styles.loginText}>Đã có tài khoản?</Text>
         <TouchableOpacity onPress={() => router.push("/LoginScreen")}>
           <Text style={styles.loginLink}>Đăng nhập ngay</Text>
@@ -155,9 +203,7 @@ export default function RegisterScreen() {
         <Text style={styles.footerText}>
           Bằng việc tiếp tục, bạn đã đọc và đồng ý với{" "}
           <Text style={styles.linkText}>Điều khoản sử dụng</Text> và{" "}
-          <Text style={styles.linkText}>
-            Chính sách bảo mật thông tin cá nhân của Ticketbox.
-          </Text>
+          <Text style={styles.linkText}>Chính sách bảo mật thông tin cá nhân của Ticketbox.</Text>
         </Text>
       </View>
     </SafeAreaView>
@@ -167,7 +213,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#2dbc70", // Màu nền header kéo lên cả phần trên
+    backgroundColor: "#2dbc70",
   },
   header: {
     flexDirection: "column-reverse",

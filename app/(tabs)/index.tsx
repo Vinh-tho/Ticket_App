@@ -3,15 +3,16 @@ import {
   StyleSheet,
   Dimensions,
   FlatList,
+  View
 } from "react-native";
 import React from "react";
-import LiveMusicEvents from "../../components/index_creen/LiveMusicEvents";
-import TrendingEvent from "../../components/index_creen/TrendingEvent"
-import Events from "../../components/index_creen/Events";
-import Recommendation from "../../components/index_creen/Recommendation"
-import Wekend_And_Month from "../../components/index_creen/Wekend_And_Month";
-import Header from "../../components/index_creen/Header";
-import InterestingDestinations from "../../components/index_creen/InterestingDestinations";
+import LiveMusicEvents from "../index_creen/LiveMusicEvents";
+import TrendingEvent from "../index_creen/TrendingEvent"
+import Events from "../index_creen/Events";
+import Recommendation from "../index_creen/Recommendation"
+import Wekend_And_Month from "../index_creen/Wekend_And_Month";
+import Header from "../index_creen/Header";
+import InterestingDestinations from "../index_creen/InterestingDestinations";
 
 
 const COMPONENTS = [
@@ -32,7 +33,7 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false} // Ẩn thanh cuộn
       data={COMPONENTS}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => item.component}
+      renderItem={({ item }) => <View>{item.component}</View>}
     />
   );
 }

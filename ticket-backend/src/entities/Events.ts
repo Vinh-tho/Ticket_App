@@ -1,13 +1,7 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToOne,
-  OneToMany,
-  JoinColumn,
-} from 'typeorm';
-import { EventDetail } from '../entities/events-detail.entity';
-import { Ticket } from '../entities/ticket.entity'; // Đường dẫn đến file ticket.entity.ts
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, OneToOne, JoinColumn } from 'typeorm';
+import { Users } from './Users';
+import { EventDetail } from './events-detail.entity';
+import { Ticket } from './ticket.entity';
 
 @Entity('events')
 export class Event {
@@ -15,20 +9,18 @@ export class Event {
   id: number;
 
   @Column()
-  title: string;
+  eventName: string;
 
-  @Column()
-  imageUrl: string;
+  @Column({ nullable: true })
+  mainImageUrl: string;
 
-  @Column()
-  createdBy: string;
+  @ManyToOne(() => Users, (user) => user.id)
+  @JoinColumn({ name: 'createdBy' })
+  createdBy: Users;
 
-  // Quan hệ 1-1 với chi tiết sự kiện
   @OneToOne(() => EventDetail, (detail) => detail.event, { cascade: true })
-  @JoinColumn()
-  detail: EventDetail;
+  eventDetail: EventDetail;
 
-  // Quan hệ 1-n với các loại vé
-  @OneToMany(() => Ticket, (ticket) => ticket.event, { cascade: true })
+  @OneToMany(() => Ticket, (ticket) => ticket.event)
   tickets: Ticket[];
 }

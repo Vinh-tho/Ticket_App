@@ -1,36 +1,30 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Event } from './Events';
+import { OrderDetail } from './order-detail.entity';
 
-export enum TicketType {
-  NORMAL = 'Normal',
-  VIP = 'VIP',
-  VVIP = 'VVIP',
-}
-
-@Entity('tickets')
+@Entity('ticket')
 export class Ticket {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({
-    type: 'enum',
-    enum: TicketType,
-    default: TicketType.NORMAL,
-  })
-  type: TicketType;
+  @ManyToOne(() => Event, (event) => event.tickets)
+  event: Event;
 
   @Column()
+  type: string;
+
+  @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
   @Column()
   quantity: number;
 
-  @Column('text', { nullable: true })
+  @Column({ default: 'available' })
+  status: string;
+
+  @Column({ nullable: true })
   seat: string;
 
-  @Column()
-  seatCount: number;
-
-  @ManyToOne(() => Event, (event) => event.tickets, { onDelete: 'CASCADE' })
-  event: Event;
+  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.ticket)
+  orderDetails: OrderDetail[];
 }

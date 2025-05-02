@@ -110,7 +110,7 @@ export class OrdersService {
   async findAll(): Promise<Order[]> {
     return this.orderRepo.find({
       relations: ['user', 'items', 'items.ticket'],
-      order: { createdAt: 'DESC' },
+      order: { orderDate: 'DESC' },
     });
   }
 
@@ -131,7 +131,7 @@ export class OrdersService {
     return this.orderRepo.find({
       where: { user: { id: userId } },
       relations: ['items', 'items.ticket'],
-      order: { createdAt: 'DESC' },
+      order: { orderDate: 'DESC' },
     });
   }
 
@@ -160,7 +160,7 @@ export class OrdersService {
       if (status === OrderStatus.CANCELLED) {
         await this.orderRepo.manager.transaction(
           async (transactionalEntityManager) => {
-            for (const item of order.items) {
+            for (const item of order.orderDetails) {
               const ticket = await transactionalEntityManager.findOne(Ticket, {
                 where: { id: item.ticket.id },
                 lock: { mode: 'pessimistic_write' },

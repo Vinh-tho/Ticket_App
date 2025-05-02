@@ -13,25 +13,25 @@ export class EventsService {
 
   async findAll(): Promise<Event[]> {
     return this.eventRepository.find({
-      relations: ['detail', 'tickets'], // Thêm 'tickets' để lấy thông tin từ bảng tickets
+      relations: ['eventDetail', 'tickets', 'createdBy'], // Thêm 'tickets' để lấy thông tin từ bảng tickets
     });
   }
 
   async findOne(id: number): Promise<Event | null> {
     return this.eventRepository.findOne({
       where: { id },
-      relations: ['detail', 'tickets'], // Thêm 'tickets' để lấy thông tin từ bảng tickets
+      relations: ['eventDetail', 'tickets', 'createdBy'], // Thêm 'tickets' để lấy thông tin từ bảng tickets
     });
   }
 
-  async create(dto: CreateEventDto, createdBy: string): Promise<Event> {
+  async create(dto: CreateEventDto, createdBy: number): Promise<Event> {
     const newEvent = this.eventRepository.create({
-      title: dto.title,
-      imageUrl: dto.imageUrl,
-      createdBy,
-      detail: dto.detail, // Tạo luôn cả event_detail
+      eventName: dto.eventName,
+      mainImageUrl: dto.mainImageUrl,
+      createdBy: { id: createdBy }, // Sửa lại kiểu dữ liệu cho đúng
+      eventDetail: dto.eventDetail,
     });
-
-    return this.eventRepository.save(newEvent); // Tự lưu cả hai bảng nhờ cascade
+  
+    return this.eventRepository.save(newEvent);
   }
 }

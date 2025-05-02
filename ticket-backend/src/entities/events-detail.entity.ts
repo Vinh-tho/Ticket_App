@@ -1,26 +1,30 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
-import { Event } from '../entities/Events';
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm';
+import { Event } from './Events';
 
-@Entity('events_detail')
+@Entity('event_detail')
 export class EventDetail {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('text')
-  description: string;
-
-  @Column()
-  image_detail: string;
+  @OneToOne(() => Event, (event) => event.eventDetail)
+  @JoinColumn({ name: 'eventId' })
+  event: Event;
 
   @Column({ nullable: true })
-  location: string;
+  detailImageUrl: string; // đổi từ image_detail sang detailImageUrl
 
-  @Column({ type: 'datetime' })
+  @Column()
   startTime: Date;
 
-  @Column({ type: 'datetime' })
+  @Column()
   endTime: Date;
 
-  @OneToOne(() => Event, (event) => event.detail)
-  event: Event;
+  @Column()
+  location: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ default: 'active' })
+  status: string;
 }

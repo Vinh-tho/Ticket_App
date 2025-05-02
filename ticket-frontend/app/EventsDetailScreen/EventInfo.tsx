@@ -5,13 +5,13 @@ export default function EventInfo({ event }: { event: any }) {
     <View style={styles.eventInfoContainer}>
       <View style={styles.dateTimeContainer}>
         <Text style={styles.dateTime}>
-          📅 {new Date(event.detail?.startTime).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+          📅 {new Date(event.eventDetail?.startTime).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
         </Text>
         <Text style={styles.dateTime}>
-          🕒 {new Date(event.detail?.startTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+          🕒 {new Date(event.eventDetail?.startTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
         </Text>
       </View>
-      <Text style={styles.location}>📍 {event.detail?.location || "Chưa rõ"}</Text>
+      <Text style={styles.location}>📍 {event.eventDetail?.location || "Chưa rõ"}</Text>
     </View>
   );
 }

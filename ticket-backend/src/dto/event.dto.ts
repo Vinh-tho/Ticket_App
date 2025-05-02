@@ -15,8 +15,8 @@ class EventDetailDto {
   @IsString()
   location?: string;
 
-  @IsString()
-  image_detail: string;
+  @IsUrl()
+  detailImageUrl: string; // đổi cho giống entity
 
   @IsDateString()
   startTime: string;
@@ -27,12 +27,12 @@ class EventDetailDto {
 
 export class CreateEventDto {
   @IsString()
-  title: string;
+  eventName: string;
 
   @IsUrl()
-  imageUrl: string;
+  mainImageUrl: string; // đổi cho giống entity
 
   @ValidateNested()
   @Type(() => EventDetailDto)
-  detail: EventDetailDto;
+  eventDetail: EventDetailDto;
 }

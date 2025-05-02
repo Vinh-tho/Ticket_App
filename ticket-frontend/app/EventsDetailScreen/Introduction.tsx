@@ -4,7 +4,7 @@ export default function Introduction({ event }: { event: any }) {
   return (
     <View>
       <Text style={styles.sectionTitle}>GIỚI THIỆU</Text>
-      <Text style={styles.description}>{event.detail?.description}</Text>
+      <Text style={styles.description}>{event.eventDetail?.description}</Text>
     </View>
   );
 }

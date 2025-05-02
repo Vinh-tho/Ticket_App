@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { Order } from '../entities/order.entity';
+import { Order } from './order.entity';
+import { Notification } from './Notification';
 
 @Entity('users')
 export class Users {
@@ -13,21 +14,20 @@ export class Users {
   email: string;
 
   @Column()
-  password: string; // Mật khẩu đã mã hóa
+  password: string;
 
-  // (Tùy chọn) Số điện thoại
   @Column({ nullable: true })
   phone: string;
 
-  // (Tùy chọn) Avatar
   @Column({ nullable: true })
   avatar: string;
 
-  // (Tùy chọn) Quyền của người dùng: 'user' | 'admin'
   @Column({ default: 'user' })
   role: string;
 
-  // Quan hệ 1-n: 1 user có thể có nhiều đơn hàng
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
 }

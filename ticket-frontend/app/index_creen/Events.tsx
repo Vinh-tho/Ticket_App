@@ -51,7 +51,7 @@ export default function Events() {
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => router.push(`/events_detail/${item.id}`)}>
             <View style={styles.eventContainer}>
-              <Image source={{ uri: item.imageUrl }} style={styles.eventImage} />
+              <Image source={{ uri: item.mainImageUrl }} style={styles.eventImage} />
             </View>
           </TouchableOpacity>
         )}

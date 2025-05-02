@@ -6,8 +6,8 @@ export default function Banner({ event }: { event: any }) {
   
   return (
     <View>
-      <Image source={{ uri: event.detail.image_detail }} style={styles.banner} />
-      <Text style={styles.title}>{event.title}</Text>
+      <Image source={{ uri: event.eventDetail.detailImageUrl }} style={styles.banner} />
+      <Text style={styles.title}>{event.eventName}</Text>
     </View>
   );
 }

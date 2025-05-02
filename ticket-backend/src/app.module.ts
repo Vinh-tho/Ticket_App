@@ -14,6 +14,8 @@ import { OrderDetail } from './entities/order-detail.entity';
 import { TicketsModule } from './modules/ticket/tickets.module';
 import { OrdersModule } from './modules/order/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module'; // ✅ THÊM DÒNG NÀY
+import { Payment } from './entities/Payment';
+import { Notification } from './entities/Notification';
 
 @Module({
   imports: [
@@ -30,8 +32,8 @@ import { PaymentsModule } from './modules/payments/payments.module'; // ✅ THÊ
       username: 'root',
       password: '12345',
       database: 'ticket-box',
-      entities: [Users, Event, EventDetail, Ticket, Order, OrderDetail],
-      synchronize: false, // Đổi thành false để dùng migration
+      entities: [Users, Event, EventDetail, Ticket, Order, OrderDetail, Payment, Notification],
+      synchronize: true, // Đổi thành false để dùng migration
     }),
   ],
   controllers: [AppController],

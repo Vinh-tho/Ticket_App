@@ -49,7 +49,7 @@ export default function TicketInfo({ event }: TicketInfoProps) {
                 style={styles.buyButton}
                 onPress={() => {
                   router.push({
-                    pathname: "/EventsDetailScreen/SeatSelectionScreen",
+                    pathname: "/seat_screen/SeatMapScreen",
                     params: { ticketType: ticket.type, ticketId: ticket.id.toString() },
                   });
                 }}

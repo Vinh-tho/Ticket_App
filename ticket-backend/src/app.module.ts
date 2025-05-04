@@ -16,6 +16,8 @@ import { OrdersModule } from './modules/order/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module'; // ✅ THÊM DÒNG NÀY
 import { Payment } from './entities/Payment';
 import { Notification } from './entities/Notification';
+import { Seat } from './entities/Seat';
+import { SeatModule } from './modules/seat/seat.module';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { Notification } from './entities/Notification';
     TicketsModule, // ✅ THÊM DÒNG NÀY
     OrdersModule,
     PaymentsModule,
+    SeatModule,
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: '127.0.0.1',
@@ -32,7 +35,7 @@ import { Notification } from './entities/Notification';
       username: 'root',
       password: '12345',
       database: 'ticket-box',
-      entities: [Users, Event, EventDetail, Ticket, Order, OrderDetail, Payment, Notification],
+      entities: [Users, Event, EventDetail, Ticket, Order, OrderDetail, Payment, Notification, Seat],
       synchronize: true, // Đổi thành false để dùng migration
     }),
   ],

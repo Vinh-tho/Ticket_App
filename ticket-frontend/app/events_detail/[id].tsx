@@ -8,8 +8,6 @@ import Introduction from "../EventsDetailScreen/Introduction";
 import TermsAndConditions from "../EventsDetailScreen/TermsAndConditions";
 import TicketInfo from "../EventsDetailScreen/TicketInfo";
 import Organizer from "../EventsDetailScreen/Organizer";
-import RelatedEvents from "../EventsDetailScreen/RelatedEvents";
-import SelectScheduleButton from "../EventsDetailScreen/SelectScheduleButton";
 import { BASE_URL } from "@/constants/config";
 
 export default function EventDetailScreen() {
@@ -42,8 +40,6 @@ export default function EventDetailScreen() {
     { id: "5", component: <TermsAndConditions /> },
     { id: "6", component: <TicketInfo event={event} /> },
     { id: "7", component: <Organizer /> },
-    { id: "8", component: <RelatedEvents /> },
-    { id: "9", component: <SelectScheduleButton /> },
   ];
 
   return (

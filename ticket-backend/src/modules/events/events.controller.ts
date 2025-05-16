@@ -1,5 +1,6 @@
-import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, Post, Body } from '@nestjs/common';
 import { EventsService } from './events.service';
+import { CreateEventDto } from '../../dto/event.dto';
 
 @Controller('events')
 export class EventsController {
@@ -19,5 +20,12 @@ export class EventsController {
       throw new NotFoundException('Event not found');
     }
     return event;
+  }
+
+  // Tạo sự kiện mới
+  @Post()
+  async create(@Body() dto: CreateEventDto) {
+    // Nếu có xác thực, thay 1 bằng userId thực tế
+    return this.eventsService.create(dto, 25);
   }
 }

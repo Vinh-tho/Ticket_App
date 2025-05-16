@@ -1,36 +1,66 @@
-import React from "react";
-import { View, Text, FlatList, Image, StyleSheet, Dimensions } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, Image, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator } from "react-native";
+import { useRouter } from "expo-router";
+import { BASE_URL } from "@/constants/config";
 
 const { width } = Dimensions.get("window");
 
-const DESTINATIONS = [
-  {
-    id: "1",
-    src: require("../../assets/images/splash.png"),
-    name: "Tp. Hồ Chí Minh",
-  },
-  {
-    id: "2",
-    src: require("../../assets/images/splash.png"),
-    name: "Hà Nội",
-  },
-];
+const DESTINATION_IMAGES: Record<string, any> = {
+  "Hà Nội": require("../../assets/images/avatar.png"),
+  "Tp. Hồ Chí Minh": require("../../assets/images/facebook.png"),
+  // Thêm các địa chỉ khác nếu muốn
+};
 
 export default function InterestingDestinations() {
+  const [destinations, setDestinations] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/events`);
+        const data = await response.json();
+        // Lấy ra các địa chỉ duy nhất
+        const addressSet = new Set();
+        data.forEach((event: any) => {
+          const location = event.eventDetails?.[0]?.location;
+          if (location) addressSet.add(location);
+        });
+        setDestinations(Array.from(addressSet) as string[]);
+      } catch (error) {
+        console.error("Lỗi khi lấy địa chỉ:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAddresses();
+  }, []);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#21C064" style={{ marginTop: 50 }} />;
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Điểm đến thú vị</Text>
       <FlatList
-        data={DESTINATIONS}
+        data={destinations}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item}
         renderItem={({ item }) => (
-          <View style={styles.destinationContainer}>
-            <Image source={item.src} style={styles.destinationImage} />
+          <TouchableOpacity
+            style={styles.destinationContainer}
+            onPress={() => router.push({
+              pathname: "/index_creen/EventsByDestination",
+              params: { destinationName: item }
+            })}
+          >
+            <Image source={DESTINATION_IMAGES[item] || require("../../assets/images/splash.png")} style={styles.destinationImage} />
             <View style={styles.overlay} />
-            <Text style={styles.destinationName}>{item.name}</Text>
-          </View>
+            <Text style={styles.destinationName}>{item}</Text>
+          </TouchableOpacity>
         )}
       />
     </View>

@@ -12,6 +12,9 @@ import { CreateOrderDto } from '../../dto/create-order.dto';
 import { Users } from '../../entities/Users';
 import { Ticket } from '../../entities/ticket.entity';
 import { OrderStatus } from '../../common/enums/order-status.enum';
+import { SeatStatusService } from '../seat-status/seat-status.service';
+import { EventDetail } from '../../entities/events-detail.entity';
+import { Seat } from '../../entities/Seat';
 
 @Injectable()
 export class OrdersService {
@@ -29,6 +32,14 @@ export class OrdersService {
 
     @InjectRepository(Ticket)
     private ticketRepo: Repository<Ticket>,
+
+    @InjectRepository(EventDetail)
+    private eventDetailRepo: Repository<EventDetail>,
+
+    @InjectRepository(Seat)
+    private seatRepo: Repository<Seat>,
+
+    private seatStatusService: SeatStatusService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
@@ -38,7 +49,6 @@ export class OrdersService {
         throw new NotFoundException('Không tìm thấy người dùng');
       }
 
-      let total = 0;
       const items: OrderDetail[] = [];
 
       return await this.orderRepo.manager.transaction(
@@ -65,25 +75,58 @@ export class OrdersService {
               throw new BadRequestException(`Vé ${ticket.type} đã hết`);
             }
 
-            total += ticket.price * itemDto.quantity;
-
             const item = transactionalEntityManager.create(OrderDetail, {
               ticket,
               quantity: itemDto.quantity,
-              seat: itemDto.seat,
-              price: ticket.price,
+              unitPrice: ticket.price, // Đảm bảo truyền unitPrice
+              seatId: itemDto.seatId,
               order: undefined, // Will be set when order is created
             });
             items.push(item);
 
             ticket.quantity -= itemDto.quantity;
             await transactionalEntityManager.save(ticket);
+
+            // Xử lý seat status nếu có seatId và eventDetailId
+            this.logger.log('DEBUG itemDto: ' + JSON.stringify(itemDto));
+            this.logger.log('DEBUG createOrderDto: ' + JSON.stringify(createOrderDto));
+            if (itemDto.seatId && createOrderDto.eventDetailId) {
+              const seat = await transactionalEntityManager.findOne(Seat, { where: { id: itemDto.seatId } });
+              const eventDetail = await transactionalEntityManager.findOne(EventDetail, { where: { id: createOrderDto.eventDetailId } });
+              if (seat && eventDetail) {
+                // Kiểm tra đã có seat_status chưa
+                let seatStatus = await transactionalEntityManager.findOne('seat_status', {
+                  where: { seat: { id: seat.id }, eventDetail: { id: eventDetail.id } },
+                  relations: ['seat', 'eventDetail'],
+                });
+                if (!seatStatus) {
+                  seatStatus = transactionalEntityManager.create('seat_status', {
+                    seat,
+                    eventDetail,
+                    status: 'held',
+                    user,
+                  });
+                } else {
+                  (seatStatus as any).status = 'booked';
+                  (seatStatus as any).user = user;
+                }
+                await transactionalEntityManager.save('seat_status', seatStatus);
+                this.logger.log('DEBUG seat_status saved: ' + JSON.stringify(seatStatus));
+              }
+            }
+          }
+
+          // Tính lại tổng tiền đúng chuẩn
+          let total = 0;
+          for (const item of items) {
+            total += Number(item.unitPrice) * Number(item.quantity);
           }
 
           const order = transactionalEntityManager.create(Order, {
             user,
             totalAmount: total,
             items,
+            eventDetailId: createOrderDto.eventDetailId,
             status: OrderStatus.PENDING,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -109,28 +152,43 @@ export class OrdersService {
 
   async findAll(): Promise<Order[]> {
     return this.orderRepo.find({
-      relations: ['user', 'items', 'items.ticket'],
+      relations: ['user', 'orderDetails', 'orderDetails.ticket'],
       order: { orderDate: 'DESC' },
     });
   }
 
-  async findOne(id: number): Promise<Order> {
+  async findOne(id: number): Promise<any> {
     const order = await this.orderRepo.findOne({
       where: { id },
-      relations: ['user', 'items', 'items.ticket'],
+      relations: ['user', 'orderDetails', 'orderDetails.ticket'],
     });
 
     if (!order) {
       throw new NotFoundException('Không tìm thấy đơn hàng');
     }
 
-    return order;
+    // Bổ sung totalLine cho từng orderDetail
+    const orderDetailsWithTotal = order.orderDetails.map((item) => ({
+      ...item,
+      totalLine: Number(item.unitPrice) * Number(item.quantity),
+    }));
+
+    return {
+      ...order,
+      orderDetails: orderDetailsWithTotal,
+      totalAmount: order.totalAmount,
+    };
   }
 
   async findByUserId(userId: number): Promise<Order[]> {
     return this.orderRepo.find({
       where: { user: { id: userId } },
-      relations: ['items', 'items.ticket'],
+      relations: [
+        'orderDetails', 
+        'orderDetails.ticket', 
+        'orderDetails.ticket.event',
+        'orderDetails.ticket.event.eventDetails'
+      ],
       order: { orderDate: 'DESC' },
     });
   }
@@ -142,11 +200,14 @@ export class OrdersService {
     }
   }
 
-  async updateOrderStatus(orderId: number, status: OrderStatus): Promise<Order> {
+  async updateOrderStatus(
+    orderId: number,
+    status: OrderStatus,
+  ): Promise<Order> {
     try {
       const order = await this.orderRepo.findOne({
         where: { id: orderId },
-        relations: ['items', 'items.ticket'],
+        relations: ['orderDetails', 'orderDetails.ticket'],
       });
 
       if (!order) {
@@ -154,7 +215,9 @@ export class OrdersService {
       }
 
       if (order.status === OrderStatus.PAID) {
-        throw new BadRequestException('Đơn hàng đã thanh toán không thể cập nhật');
+        throw new BadRequestException(
+          'Đơn hàng đã thanh toán không thể cập nhật',
+        );
       }
 
       if (status === OrderStatus.CANCELLED) {
@@ -175,13 +238,30 @@ export class OrdersService {
         );
       }
 
+      if (status === OrderStatus.PAID) {
+        await this.orderRepo.manager.transaction(async (transactionalEntityManager) => {
+          for (const item of order.orderDetails) {
+            if (item.seatId && order.eventDetailId) {
+              const seatStatus = await transactionalEntityManager.findOne('seat_status', {
+                where: { seat: { id: item.seatId }, eventDetail: { id: order.eventDetailId } },
+                relations: ['seat', 'eventDetail'],
+              });
+              if (seatStatus) {
+                (seatStatus as any).status = 'booked';
+                await transactionalEntityManager.save('seat_status', seatStatus);
+              }
+            }
+          }
+        });
+      }
+
       order.status = status;
       order.updatedAt = new Date();
-      
+
       const savedOrder = await this.orderRepo.save(order);
-      
+
       this.logger.log(`Order ${orderId} status updated to ${status}`);
-      
+
       return savedOrder;
     } catch (error) {
       this.logger.error(`Error updating order status: ${error.message}`);

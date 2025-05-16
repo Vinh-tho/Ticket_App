@@ -12,6 +12,7 @@ import Header from "@/app/Login_Screen/Header";
 import React, { useState } from "react";
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "@/constants/config";
 
 export default function LoginScreen() {
@@ -24,13 +25,13 @@ export default function LoginScreen() {
       const response = await axios.post(`${BASE_URL}/auth/login`, {
         email,
         password,
-      });      
+      });
 
       const token = response.data.access_token;
       console.log("Token nhận được:", token);
-      await SecureStore.setItemAsync("access_token", token); // <-- dòng này rất quan trọng
+      await SecureStore.setItemAsync("access_token", token);
+      await AsyncStorage.setItem("token", token); // Đảm bảo đồng bộ cả 2 nơi
       router.push("/(tabs)"); // quay về màn hình chính
-
     } catch (error: any) {
       Alert.alert(
         "Đăng nhập không thành công",

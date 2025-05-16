@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from '../../entities/Users';
 import { ILike, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from '../../dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -49,5 +50,36 @@ export class UserService {
 
   findAll(): Promise<Users[]> {
     return this.userRepository.find();
+  }
+
+  async findById(id: number): Promise<Users> {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException(`Không tìm thấy người dùng với ID: ${id}`);
+    }
+    return user;
+  }
+
+  async getUserProfile(userId: number): Promise<any> {
+    const user = await this.findById(userId);
+    // Loại bỏ thông tin nhạy cảm như mật khẩu
+    const { password, ...userInfo } = user;
+    return userInfo;
+  }
+
+  async updateUserProfile(userId: number, updateUserDto: UpdateUserDto): Promise<any> {
+    const user = await this.findById(userId);
+    
+    // Cập nhật các trường thông tin mới
+    if (updateUserDto.name) user.name = updateUserDto.name;
+    if (updateUserDto.phone) user.phone = updateUserDto.phone;
+    if (updateUserDto.avatar) user.avatar = updateUserDto.avatar;
+    
+    // Lưu thông tin đã cập nhật
+    const updated = await this.userRepository.save(user);
+    
+    // Loại bỏ thông tin nhạy cảm như mật khẩu
+    const { password, ...userInfo } = updated;
+    return userInfo;
   }
 }

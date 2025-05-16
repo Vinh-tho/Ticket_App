@@ -43,4 +43,9 @@ export class EventDetailController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);
   }
+
+  @Post('recalculate-capacity')
+  async recalculateCapacity() {
+    return this.service.recalculateAllCapacities();
+  }
 }

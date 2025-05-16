@@ -1,7 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Ticket } from './ticket.entity';
 import { Event } from './Events';
-import { Users } from './Users';
+import { SeatStatus } from './seat-status.entity';
 
 @Entity('seat')
 export class Seat {
@@ -23,12 +23,8 @@ export class Seat {
   @Column()
   number: number; // Số ghế
 
-  @Column({ default: 'available' })
-  status: string; // available, held, booked
-
-  @ManyToOne(() => Users, (user) => user.id, { nullable: true })
-  user: Users;// Người giữ/đặt ghế (nếu có)
-
-  @Column({ type: 'datetime', nullable: true })
-  holdUntil: Date | null; // Thời gian giữ ghế tạm thời (nếu có)
+  @OneToMany(() => SeatStatus, (seatStatus) => seatStatus.seat, {
+    cascade: true,
+  })
+  seatStatuses: SeatStatus[];
 }

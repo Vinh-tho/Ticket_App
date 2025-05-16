@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { IconSymbol } from "../ui/IconSymbol";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const supportItems = [
   { icon: "delete", label: "Xoá tài khoản" },
@@ -34,6 +35,7 @@ export default function SupportList() {
         onPress: async () => {
           await SecureStore.deleteItemAsync("access_token");
           await SecureStore.deleteItemAsync("user_info");
+          await AsyncStorage.removeItem("token"); // Xóa luôn token ở AsyncStorage
           router.replace("/LoginScreen");
         },
       },

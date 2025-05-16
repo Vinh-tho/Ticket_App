@@ -26,10 +26,7 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('vnpay/create')
-  async createPayment(
-    @Body() body: VNPayCreateDTO,
-    @Req() req: Request,
-  ) {
+  async createPayment(@Body() body: VNPayCreateDTO, @Req() req: Request) {
     try {
       const { orderId, amount, bankCode } = body;
       if (!orderId || !amount) {
@@ -42,75 +39,115 @@ export class PaymentsController {
         req.socket.remoteAddress ||
         '127.0.0.1';
 
-      this.logger.log(`Creating payment URL for order ${orderId} with amount ${amount}`);
-
-      const url = await this.paymentsService.createPaymentUrl(
-        orderId, 
-        amount, 
-        ipAddr,
+      this.logger.log(
+        `Creating payment URL for order ${orderId} with amount ${amount}`,
       );
 
-      return { 
-        success: true, 
+      const url = await this.paymentsService.createPaymentUrl(
+        orderId,
+        amount,
+        ipAddr,
+        bankCode, // thêm dòng này
+      );
+
+      return {
+        success: true,
         paymentUrl: url,
         orderInfo: {
           orderId,
           amount,
           ipAddr,
-          bankCode: bankCode || 'Not specified'
-        }
+          bankCode: bankCode || 'Not specified',
+        },
       };
     } catch (error) {
       this.logger.error(`Error creating payment URL: ${error.message}`);
       throw new HttpException(
         error.message || 'Lỗi tạo URL thanh toán',
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
 
   @Get('vnpay/callback')
-  async handleVNPayCallback(@Query() query: Record<string, string>) {
+  async handleVNPayCallback(
+    @Query() query: Record<string, string>,
+    @Req() req: Request,
+  ) {
+    this.logger.log('VNPay callback query (raw):', JSON.stringify(req.query));
+    this.logger.log('VNPay callback query (parsed):', JSON.stringify(query));
+    // Kiểm tra các trường bắt buộc
+    if (!query.vnp_TxnRef) {
+      this.logger.error('Thiếu vnp_TxnRef trong callback');
+      throw new BadRequestException('Thiếu mã đơn hàng (vnp_TxnRef)');
+    }
+    if (!query.vnp_SecureHash) {
+      this.logger.error('Thiếu vnp_SecureHash trong callback');
+      throw new BadRequestException('Thiếu mã xác thực (vnp_SecureHash)');
+    }
+    if (!query.vnp_Amount) {
+      this.logger.error('Thiếu vnp_Amount trong callback');
+      throw new BadRequestException('Thiếu số tiền thanh toán (vnp_Amount)');
+    }
+    if (!query.vnp_ResponseCode) {
+      this.logger.error('Thiếu vnp_ResponseCode trong callback');
+      throw new BadRequestException('Thiếu mã phản hồi (vnp_ResponseCode)');
+    }
     try {
-      if (!query.vnp_TxnRef || !query.vnp_SecureHash) {
-        throw new BadRequestException('Thiếu thông tin thanh toán');
-      }
-
       this.logger.log(`Received VNPay callback for order ${query.vnp_TxnRef}`);
-
       const result = await this.paymentsService.handleVNPayCallback(query);
-      
       return {
         code: result.success ? '00' : '99',
         message: result.message,
         data: {
           ...result.data,
           responseCode: query.vnp_ResponseCode,
-          transactionDate: query.vnp_PayDate
-        }
+          transactionDate: query.vnp_PayDate,
+        },
       };
     } catch (error) {
       this.logger.error(`Error handling callback: ${error.message}`);
       throw new HttpException(
         error.message || 'Xử lý callback thất bại',
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
 
   @Get('vnpay/ipn')
   async handleVNPayIPN(@Query() query: Record<string, string>) {
+    this.logger.log('VNPay IPN query:', JSON.stringify(query));
+    // Kiểm tra các trường bắt buộc
+    if (!query.vnp_TxnRef) {
+      this.logger.error('Thiếu vnp_TxnRef trong IPN');
+      return { RspCode: '01', Message: 'Thiếu mã đơn hàng (vnp_TxnRef)' };
+    }
+    if (!query.vnp_SecureHash) {
+      this.logger.error('Thiếu vnp_SecureHash trong IPN');
+      return { RspCode: '97', Message: 'Thiếu mã xác thực (vnp_SecureHash)' };
+    }
+    if (!query.vnp_Amount) {
+      this.logger.error('Thiếu vnp_Amount trong IPN');
+      return {
+        RspCode: '04',
+        Message: 'Thiếu số tiền thanh toán (vnp_Amount)',
+      };
+    }
+    if (!query.vnp_ResponseCode) {
+      this.logger.error('Thiếu vnp_ResponseCode trong IPN');
+      return { RspCode: '99', Message: 'Thiếu mã phản hồi (vnp_ResponseCode)' };
+    }
     try {
       const result = await this.paymentsService.handleVNPayCallback(query);
       return {
         RspCode: result.success ? '00' : '99',
-        Message: result.success ? 'Confirm Success' : 'Confirm Fail'
+        Message: result.success ? 'Confirm Success' : 'Confirm Fail',
       };
     } catch (error) {
       this.logger.error(`Error handling IPN: ${error.message}`);
       return {
         RspCode: '99',
-        Message: 'Unknow error'
+        Message: error.message || 'Unknow error',
       };
     }
   }

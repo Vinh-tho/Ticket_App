@@ -13,14 +13,14 @@ export class EventsService {
 
   async findAll(): Promise<Event[]> {
     return this.eventRepository.find({
-      relations: ['eventDetail', 'tickets', 'createdBy'], // Thêm 'tickets' để lấy thông tin từ bảng tickets
+      relations: ['eventDetails', 'tickets', 'createdBy'],
     });
   }
 
   async findOne(id: number): Promise<Event | null> {
     return this.eventRepository.findOne({
       where: { id },
-      relations: ['eventDetail', 'tickets', 'createdBy'], // Thêm 'tickets' để lấy thông tin từ bảng tickets
+      relations: ['eventDetails', 'tickets', 'createdBy'],
     });
   }
 
@@ -28,8 +28,8 @@ export class EventsService {
     const newEvent = this.eventRepository.create({
       eventName: dto.eventName,
       mainImageUrl: dto.mainImageUrl,
-      createdBy: { id: createdBy }, // Sửa lại kiểu dữ liệu cho đúng
-      eventDetail: dto.eventDetail,
+      createdBy: { id: createdBy },
+      eventDetails: dto.eventDetails,
     });
   
     return this.eventRepository.save(newEvent);

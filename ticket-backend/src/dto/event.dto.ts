@@ -32,7 +32,7 @@ export class CreateEventDto {
   @IsUrl()
   mainImageUrl: string; // đổi cho giống entity
 
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => EventDetailDto)
-  eventDetail: EventDetailDto;
+  eventDetails: EventDetailDto[];
 }

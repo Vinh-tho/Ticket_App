@@ -1,16 +1,20 @@
 // app/_layout.tsx
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, SplashScreen as ExpoRouterSplash } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { View, Platform } from 'react-native';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-// Giữ Splash Screen cho đến khi tài nguyên tải xong
+// Đảm bảo Splash Screen của Expo hiển thị
 SplashScreen.preventAutoHideAsync();
+
+// Đảm bảo splash screen của expo-router không hiển thị
+ExpoRouterSplash.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -19,27 +23,35 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    async function prepare() {
-      try {
-        // Chờ 2 giây trước khi ẩn Splash Screen
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (e) {
-        console.warn(e);
-      } finally {
-        SplashScreen.hideAsync();
-      }
+    // Ẩn Expo splash screen ngay khi component được tạo
+    SplashScreen.hideAsync();
+    
+    if (loaded) {
+      // Ẩn splash screen của expo-router
+      ExpoRouterSplash.hideAsync();
     }
-    prepare();
-  }, []);
+  }, [loaded]);
 
   if (!loaded) {
     return null; // Chưa load font thì không render gì
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }} />
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <View style={{ flex: 1 }}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack
+          screenOptions={{ 
+            headerShown: false,
+            contentStyle: { backgroundColor: 'transparent' },
+            animation: 'fade'
+          }}
+        />
+        <StatusBar 
+          style="light" 
+          backgroundColor={Platform.OS === 'android' ? '#21C064' : 'transparent'}
+          translucent={Platform.OS === 'android'}
+        />
+      </ThemeProvider>
+    </View>
   );
 }

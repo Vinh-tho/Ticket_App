@@ -18,8 +18,8 @@ export class Event {
   @JoinColumn({ name: 'createdBy' })
   createdBy: Users;
 
-  @OneToOne(() => EventDetail, (detail) => detail.event, { cascade: true })
-  eventDetail: EventDetail;
+  @OneToMany(() => EventDetail, (detail) => detail.event, { cascade: true })
+  eventDetails: EventDetail[];
 
   @OneToMany(() => Ticket, (ticket) => ticket.event)
   tickets: Ticket[];

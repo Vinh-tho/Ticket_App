@@ -22,9 +22,6 @@ export class Ticket {
   @Column({ default: 'available' })
   status: string;
 
-  @Column({ nullable: true })
-  seat: string;
-
   @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.ticket)
   orderDetails: OrderDetail[];
 }

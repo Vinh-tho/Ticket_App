@@ -1,14 +1,14 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
-import { StatusBar } from "react-native";
 import { useRouter } from "expo-router"; // Import router
 import { XCircle } from "phosphor-react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Header() {
   const router = useRouter(); // Lấy router để điều hướng
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.headerContainer}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.replace("/")}>
           {/* Icon Close có viền tròn */}

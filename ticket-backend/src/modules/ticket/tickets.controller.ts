@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, ParseIntPipe, NotFoundException } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { CreateTicketDto } from '../../dto/create-ticket.dto';
 
@@ -17,17 +17,20 @@ export class TicketsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.ticketsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  async updateSeat(@Param('id') id: string, @Body() body: { seat: string }) {
-    return this.ticketsService.updateSeat(+id, body.seat);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const ticket = await this.ticketsService.findOne(id);
+      return {
+        success: true,
+        data: ticket
+      };
+    } catch (error) {
+      throw new NotFoundException(`Không tìm thấy vé với id ${id}`);
+    }
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.ticketsService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.ticketsService.remove(id);
   }
 }

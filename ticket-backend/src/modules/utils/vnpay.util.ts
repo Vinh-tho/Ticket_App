@@ -10,15 +10,35 @@ interface VNPayParams {
   bankCode?: string;
 }
 
-export function generateHMAC(data: Record<string, string>, secret: string): string {
-  const sortedParams = Object.fromEntries(
-    Object.entries(data).sort(([a], [b]) => a.localeCompare(b)),
-  );
-  const signData = qs.stringify(sortedParams, { encode: false });
-  return crypto
+// Hàm sắp xếp và encode từng tham số giống mẫu VNPAY
+function sortAndEncodeObject(
+  obj: Record<string, string>,
+): Record<string, string> {
+  const sorted: Record<string, string> = {};
+  const keys = Object.keys(obj).sort();
+  for (const key of keys) {
+    sorted[key] = encodeURIComponent(obj[key]).replace(/%20/g, '+');
+  }
+  return sorted;
+}
+
+export function generateHMAC(
+  data: Record<string, string>,
+  secret: string,
+): string {
+  const sortedParams = sortAndEncodeObject(data);
+  const signData = Object.keys(sortedParams)
+    .map((key) => `${key}=${sortedParams[key]}`)
+    .join('&');
+  // Log signData để debug lỗi hash
+  console.log('[VNPay] signData for HMAC:', signData);
+  const hmac = crypto
     .createHmac('sha512', secret)
-    .update(signData)
-    .digest('hex');
+    .update(Buffer.from(signData, 'utf-8'))
+    .digest('hex')
+    .toUpperCase(); // Đảm bảo trả về chữ hoa để so sánh đúng chuẩn VNPay
+  console.log('[VNPay] HMAC result:', hmac);
+  return hmac;
 }
 
 export function createVNPayUrl({
@@ -52,26 +72,24 @@ export function createVNPayUrl({
     vnp_CurrCode: 'VND',
     vnp_TxnRef: String(orderId),
     vnp_OrderInfo: orderInfo,
-    vnp_OrderType: 'billpayment',
-    vnp_Amount: String(amount * 100),
+    vnp_OrderType: 'other',
+    vnp_Amount: String(Math.round(amount * 100)),
     vnp_ReturnUrl,
     vnp_IpAddr: ipAddr,
     vnp_CreateDate: createDate,
   };
 
-  // Add bank code if provided
   if (bankCode) {
     vnp_Params.vnp_BankCode = bankCode;
   }
 
-  // Generate HMAC signature
+  const sortedEncodedParams = sortAndEncodeObject(vnp_Params);
   const hmac = generateHMAC(vnp_Params, vnp_HashSecret);
+  sortedEncodedParams['vnp_SecureHash'] = hmac;
 
-  // Create final query string
-  const queryString = qs.stringify({
-    ...vnp_Params,
-    vnp_SecureHash: hmac
-  }, { encode: false });
+  const queryString = Object.keys(sortedEncodedParams)
+    .map((key) => `${key}=${sortedEncodedParams[key]}`)
+    .join('&');
 
   return `${vnp_Url}?${queryString}`;
 }
@@ -83,12 +101,16 @@ export function verifyReturnUrl(query: Record<string, string>): boolean {
       throw new Error('Missing VNPAY_HASH_SECRET');
     }
 
-    const vnp_SecureHash = query.vnp_SecureHash;
-    delete query.vnp_SecureHash;
-    delete query.vnp_SecureHashType;
+    // Clone object để không làm thay đổi query gốc
+    const params = { ...query };
+    const vnp_SecureHash = params.vnp_SecureHash;
+    delete params.vnp_SecureHash;
+    delete params.vnp_SecureHashType;
+    // KHÔNG xóa vnp_ResponseCode hoặc bất kỳ trường nào khác!
 
-    const hmac = generateHMAC(query, vnp_HashSecret);
-    return hmac === vnp_SecureHash;
+    // Sort và encode đúng chuẩn trước khi tạo HMAC
+    const hmac = generateHMAC(params, vnp_HashSecret);
+    return hmac === (vnp_SecureHash || '').toUpperCase();
   } catch (error) {
     console.error('Error verifying return URL:', error);
     return false;

@@ -7,201 +7,228 @@ import {
     FlatList,
     Dimensions,
     Animated,
+    ActivityIndicator,
   } from "react-native";
   import { Ionicons } from "@expo/vector-icons";
-  import React, { useRef, useState } from "react";
+  import React, { useRef, useState, useEffect } from "react";
+  import { useRouter } from "expo-router";
+  import { BASE_URL } from "@/constants/config";
 
-const WEEKEND_EVENTS = [
-  {
-    id: "1",
-    src: require("../../assets/images/splash.png"),
-    title: 'ANH TRAI "SAY HI" CONCERT - ĐÊM 5',
-    price: "700.000 đ",
-    date: "21 Tháng 03, 2025",
-  },
-  {
-    id: "2",
-    src: require("../../assets/images/splash.png"),
-    title: "SÂN KHẤU THIÊN ĐỊA - ĐỒ ĐỊNH MỆNH",
-    price: "330.000 đ",
-    date: "22 Tháng 03, 2025",
-  },
-];
-
-const MONTH_EVENTS = [
-  {
-    id: "1",
-    src: require("../../assets/images/splash.png"),
-    title: "ĐÊM NHẠC TRỰC TUYẾN - THẾ HỆ MỚI",
-    price: "500.000 đ",
-    date: "15 Tháng 03, 2025",
-  },
-  {
-    id: "2",
-    src: require("../../assets/images/splash.png"),
-    title: "FESTIVAL DJ - EDM NỔI LOẠN",
-    price: "1.200.000 đ",
-    date: "30 Tháng 03, 2025",
-  },
-];
+interface Event {
+  id: number;
+  mainImageUrl: string;
+  eventName: string;
+  eventDetails: {
+    detailImageUrl: string;
+    startTime: string;
+    price: number;
+  }[];
+}
 
 const { width, height } = Dimensions.get("window");
 
 export default function Wekend_And_Month() {
+  const [selectedTab, setSelectedTab] = useState("weekend");
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const indicatorPosition = useRef(new Animated.Value(0)).current;
 
-  const moveIndicator = (position: number) => {
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/events`);
+        const data = await response.json();
+        setEvents(data);
+      } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu sự kiện:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  const moveIndicator = (tab: string) => {
     Animated.timing(indicatorPosition, {
-      toValue: position,
-      duration: 200, // Thời gian chuyển động
+      toValue: tab === "weekend" ? 0 : width * 0.5,
+      duration: 200,
       useNativeDriver: false,
     }).start();
   };
 
   const handleTabPress = (tab: string) => {
     setSelectedTab(tab);
-    if (tab === "weekend") {
-      moveIndicator(width - 369); // Vị trí ban đầu (cho "Cuối tuần này")
-    } else {
-      moveIndicator(width * 0.32); // Điều chỉnh vị trí của "Tháng này"
-    }
+    moveIndicator(tab);
   };
 
-  const [selectedTab, setSelectedTab] = useState("weekend");
+  const getFilteredEvents = () => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Chủ nhật đầu tuần
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Thứ 7 cuối tuần
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return events.filter(event => {
+      const eventDate = new Date(event.eventDetails?.[0]?.startTime || '');
+      if (selectedTab === "weekend") {
+        return eventDate >= startOfWeek && eventDate <= endOfWeek;
+      } else {
+        return eventDate >= startOfMonth && eventDate <= endOfMonth;
+      }
+    });
+  };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#21C064" />
+      </View>
+    );
+  }
+
+  const filteredEvents = getFilteredEvents();
 
   return (
     <View>
       <View style={styles.tabContainer}>
-        <TouchableOpacity onPress={() => handleTabPress("weekend")}>
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === "weekend" && styles.activeTab,
-            ]}
-          >
-            Cuối tuần này
-          </Text>
+        <TouchableOpacity style={styles.tabBtn} onPress={() => handleTabPress("weekend")}> 
+          <Text style={[styles.tabText, selectedTab === "weekend" && styles.activeTab]}>Tuần này</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleTabPress("month")}>
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === "month" && styles.activeTab,
-            ]}
-          >
-            Tháng này
-          </Text>
+        <TouchableOpacity style={styles.tabBtn} onPress={() => handleTabPress("month")}> 
+          <Text style={[styles.tabText, selectedTab === "month" && styles.activeTab]}>Tháng này</Text>
         </TouchableOpacity>
       </View>
-      <Animated.View
-        style={[
-          styles.indicator,
-          { left: indicatorPosition }, // Thay vì left cố định, dùng Animated.Value
-        ]}
-      />
-
+      <View style={styles.indicatorWrapper}>
+        <Animated.View
+          style={[
+            styles.indicator,
+            {
+              left: indicatorPosition,
+            },
+          ]}
+        />
+      </View>
       <FlatList
-        data={selectedTab === "weekend" ? WEEKEND_EVENTS : MONTH_EVENTS}
+        data={filteredEvents}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.recommendedEventContainer}>
-            <Image source={item.src} style={styles.recommendedEventImage} />
-            <Text style={styles.eventTitle} numberOfLines={2}>
-              {item.title}
-            </Text>
-            <Text style={styles.eventPrice}>Từ {item.price}</Text>
-            <View style={styles.eventDate}>
-              <Ionicons name="calendar-outline" size={14} color="gray" />
-              <Text style={styles.eventDateText}>{item.date}</Text>
-            </View>
-          </View>
-        )}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => {
+          const eventDetail = item.eventDetails?.[0];
+          const formattedDate = eventDetail?.startTime 
+            ? new Date(eventDetail.startTime).toLocaleDateString("vi-VN", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric"
+              })
+            : "Chưa có ngày";
+          const formattedPrice = eventDetail?.price 
+            ? `${eventDetail.price.toLocaleString('vi-VN')} đ`
+            : "Miễn phí";
+          return (
+            <TouchableOpacity 
+              style={styles.recommendedEventContainer}
+              onPress={() => router.push(`/events_detail/${item.id}`)}
+            >
+              <Image 
+                source={{ uri: eventDetail?.detailImageUrl || item.mainImageUrl }} 
+                style={styles.recommendedEventImage} 
+              />
+              <Text style={styles.eventTitle} numberOfLines={2}>
+                {item.eventName}
+              </Text>
+              <Text style={styles.eventPrice}>Từ {formattedPrice}</Text>
+              <View style={styles.eventDate}>
+                <Ionicons name="calendar-outline" size={14} color="gray" />
+                <Text style={styles.eventDateText}>{formattedDate}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-    tabContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 39,
-        paddingHorizontal: 96,
-      },
-    
-      tabText: {
-        fontSize: 16,
-        color: "gray",
-        fontWeight: "bold",
-        paddingBottom: 5,
-        right: 85,
-      },
-    
-      activeTab: {
-        color: "white",
-      },
-    
-      tabIndicator: {
-        flexDirection: "row",
-        justifyContent: "center",
-        marginTop: 13,
-      },
-    
-      indicator: {
-        width: "22%",
-        height: 5,
-        backgroundColor: "#21C064",
-        borderRadius: 2,
-        position: "absolute",
-        top:60,
-      },
-    
-      indicatorRight: {
-        left: "50%",
-      },
-    
-      recommendedEventContainer: {
-        backgroundColor: "#1e1e1e",
-        width: width * 0.6,
-        marginLeft: 15,
-        borderRadius: 10,
-        overflow: "hidden",
-        paddingBottom: 10,
-        marginTop: 26,
-      },
-    
-      recommendedEventImage: {
-        width: "100%",
-        height: height * 0.15,
-        resizeMode: "cover",
-      },
-    
-      eventTitle: {
-        color: "white",
-        fontSize: 14,
-        fontWeight: "bold",
-        margin: 5,
-      },
-    
-      eventPrice: {
-        color: "#21C064",
-        fontSize: 14,
-        fontWeight: "bold",
-        marginLeft: 5,
-      },
-    
-      eventDate: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginLeft: 5,
-      },
-    
-      eventDateText: {
-        color: "gray",
-        fontSize: 12,
-        marginLeft: 5,
-      },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 39,
+    marginBottom: 0,
+  },
+  tabBtn: {
+    width: width * 0.5,
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  tabText: {
+    fontSize: 18,
+    color: "#b0b0b0",
+    fontWeight: "bold",
+  },
+  activeTab: {
+    color: "#fff",
+  },
+  indicatorWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 6,
+    marginBottom: 8,
+  },
+  indicator: {
+    position: 'absolute',
+    height: 4,
+    width: width * 0.5,
+    backgroundColor: "#21C064",
+    borderRadius: 4,
+    bottom: 0,
+  },
+  recommendedEventContainer: {
+    backgroundColor: "#1e1e1e",
+    width: width * 0.6,
+    marginLeft: 15,
+    borderRadius: 10,
+    overflow: "hidden",
+    paddingBottom: 10,
+    marginTop: 26,
+  },
+  recommendedEventImage: {
+    width: "100%",
+    height: height * 0.15,
+    resizeMode: "cover",
+  },
+  eventTitle: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+    margin: 5,
+  },
+  eventPrice: {
+    color: "#21C064",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
+  eventDate: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 5,
+  },
+  eventDateText: {
+    color: "gray",
+    fontSize: 12,
+    marginLeft: 5,
+  },
 });

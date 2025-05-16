@@ -32,7 +32,7 @@ export class TicketsService {
   async findOne(id: number): Promise<Ticket> {
     const ticket = await this.ticketRepo.findOne({
       where: { id },
-      relations: ['event'],
+      relations: ['event', 'event.eventDetail'],
     });
 
     if (!ticket) {
@@ -40,13 +40,6 @@ export class TicketsService {
     }
 
     return ticket;
-  }
-
-  async updateSeat(id: number, seat: string) {
-    const ticket = await this.ticketRepo.findOne({ where: { id } });
-    if (!ticket) throw new NotFoundException('Ticket not found');
-    ticket.seat = seat;
-    return this.ticketRepo.save(ticket);
   }
 
   async remove(id: number): Promise<void> {

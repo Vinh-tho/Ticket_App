@@ -28,4 +28,7 @@ export class Order {
 
   @OneToMany(() => Payment, (payment) => payment.order)
   payments: Payment[];
+
+  @Column({ nullable: true })
+  eventDetailId: number;
 }
